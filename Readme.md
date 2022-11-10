@@ -22,7 +22,8 @@ You'll get the translated excel file downloaded in the project root folder.
 ## Limitations
 
 1. Search translations only in DeepL
-2. Only supports these languages
+2. Can only translate from English to other languages
+3. Only supports these languages:
 
 ```shell
 'bg': 'Bulgarian',
