@@ -1,4 +1,4 @@
-# Translate English words from DEEpL to Excel format
+# Translate English words from DEEpL and download in Excel
 
 
 ## How to run
