@@ -14,7 +14,7 @@ pip install -r requirements.txt
 **Step 3: Run translator**
 
 ```shell
-python main.py --language=de --words=apple,orange # Get language identifer from the list below
+python main.py --language=de --words=apple,orange,banana,mango,strawberry # Get language identifer from the list below
 ```
 
 You'll get the translated excel file downloaded in the project root folder.
