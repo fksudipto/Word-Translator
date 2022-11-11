@@ -63,6 +63,18 @@ LANGUAGES = {
     'uk': 'Ukrainian',
 }
 
+WORDS = ['keep', 'kept',
+         'retain', 'preserve', 'preserving',
+         'record', 'maintain', 'register', 'year', 'month',
+         'week', 'day', 'hour', 'document', 'book',
+         'file', 'data', 'information', 'account',
+         'dossier', 'voucher', 'receipt', 'destroy', 'store',
+         'delete', 'save', 'regulation', 'law', 'decree',
+         'decree-law', 'legislation', 'prescribe', 'rule',
+         'ordinance', 'bylaw', 'edict', 'order',
+         'gazette', 'seconds', 'subsidiary', 'legislation'
+         ]
+
 
 def get_browser_agent(index: Optional[int] = None) -> str:
     """
@@ -99,57 +111,77 @@ def process(word: str) -> str:
     word = word.replace('.', '')
     word = word.replace(':', '')
     word = word.replace(',', '')
+    word = word.replace(' ', '')
     return word
 
 
 URL = 'https://www.deepl.com/en/translator#en/{}/{}'
 
 
-def translate(language: str, words: list):
+def translate():
     browser_agent = get_browser_agent(5)
-    print(browser_agent)
     firefox_driver = get_webdriver(browser_agent)
-    workbook = xlsxwriter.Workbook('{}.xlsx'.format(LANGUAGES.get(language)))
+    workbook = xlsxwriter.Workbook('{}.xlsx'.format('Translations'))
     worksheet = workbook.add_worksheet()
-    worksheet.write(0, 0, 'Word')
-    worksheet.write(0, 1, 'Translation')
-    row = 1
 
-    for word in words:
-        url = URL.format(language, word)
-        firefox_driver.get(url)
-        WebDriverWait(firefox_driver, 10).until(
-            ec.presence_of_all_elements_located(
-                (By.TAG_NAME, 'textarea'))
-        )
+    worksheet.write(0, 0, 'English')
 
-        time.sleep(3)
+    first_entry = 1
 
-        translation = []
+    for key, value in LANGUAGES.items():
+        worksheet.write(first_entry, 0, value)
+        first_entry += 1
 
-        translation_ele = firefox_driver.find_element(
-            By.XPATH,
-            '//div[contains(@id, "target-dummydiv")]'
-        )
+    column = 1
 
-        translation.append(
-            process(translation_ele.get_attribute('innerHTML'))
-        )
+    for word in WORDS:
+        worksheet.write(0, column, word)
+        language_identifiers = LANGUAGES.keys()
 
-        alternative_translations_ele = firefox_driver.find_elements(
-            By.XPATH,
-            '//ul[@aria-labelledby="alternatives-heading"]/li[@class="lmt__translations_as_text__item"]/button'
-        )
+        row = 1
 
-        for text in alternative_translations_ele:
-            translation.append(process(text.get_attribute('innerHTML')))
+        for key in language_identifiers:
+            url = URL.format(key, word)
+            firefox_driver.get(url)
+            WebDriverWait(firefox_driver, 10).until(
+                ec.presence_of_all_elements_located(
+                    (By.TAG_NAME, 'textarea'))
+            )
 
-        print(translation)
+            time.sleep(3)
 
-        worksheet.write(row, 0, word)
-        worksheet.write(row, 1, ','.join(list(set(translation))))
+            translation = []
 
-        row += 1
+            translation_ele = firefox_driver.find_element(
+                By.XPATH,
+                '//div[contains(@id, "target-dummydiv")]'
+            )
+
+            processed_main_translation = process(
+                translation_ele.get_attribute('innerHTML')
+            )
+
+            if processed_main_translation:
+                translation.append(processed_main_translation)
+
+            alternative_translations_ele = firefox_driver.find_elements(
+                By.XPATH,
+                '//ul[@aria-labelledby="alternatives-heading"]/li[@class="lmt__translations_as_text__item"]/button'
+            )
+
+            for text in alternative_translations_ele:
+                processed_word = process(text.get_attribute('innerHTML'))
+
+                if processed_word:
+                    translation.append(processed_word)
+
+            print(translation)
+
+            worksheet.write(row, column, ','.join(list(set(translation))))
+
+            row += 1
+
+        column += 1
 
     firefox_driver.close()
     workbook.close()
@@ -159,11 +191,11 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Translate english words')
-    parser.add_argument('--language', metavar='path', required=True,
+    parser.add_argument('--language', metavar='path', required=False,
                         help='Select the language')
-    parser.add_argument('--words', metavar='path', required=True,
+    parser.add_argument('--words', metavar='path', required=False,
                         help='select words')
     args = parser.parse_args()
     selected_language = args.language
     selected_words = args.words.split(',') if args.words else None
-    translate(selected_language, selected_words)
+    translate()
